@@ -1,10 +1,12 @@
 #include <iostream>
+#include <cmath>
 
 using namespace std;
 
 struct Node{
 	int info;
-	int leafNow, leafPossible;
+	int height;
+	int leafCounter;
 	Node *left;
 	Node *right;
 };
@@ -25,8 +27,9 @@ class Btree{
 		void insert(int key, Node *node);
 		void inorderPrint(Node *node);
 		void postorderPrint(Node *node);
-		bool isFull(Node *node);
 		void printSign(int sign);
+		bool isFull(Node *node);
+		void update(Node *node);
 };
 
 Btree::Btree(){
@@ -53,47 +56,59 @@ void Btree::insert(int key){
 	if(root == NULL){
 		root = new Node;
 		root->info = key;
+		root->height = 0;
+		root->leafCounter = 1;
 		root->left = NULL;
 		root->right = NULL;
-	} else insert(key, root);
+	} else {
+		insert(key, root);
+		update(root);
+	}
+}
+
+void Btree::update(Node *node){
+	Node *l = node->left;
+	Node *r = node->right;
+	if(l != NULL){
+		node->height = l->height + 1;
+		node->leafCounter = l->leafCounter;
+	}
+	if(r != NULL){
+		if(node->height<r->height) node->height = r->height;
+		node->leafCounter += r->leafCounter;
+	}
 }
 
 void Btree::insert(int key, Node *node){
 	if(node->left == NULL){
-		cout << key << " is left " << node->info << endl;
 		node->left = new Node;
 		node->left->info = key;
-		node->left->leafNow = 0;
-		node->left->leafPossible = 2;
+		node->left->height = 0;
+		node->left->leafCounter = 1;
 		node->left->left = NULL;
 		node->left->right = NULL;
-		
-		node->leafNow += 1;
 	} else if(node->right == NULL){
-		cout << key << " is right " << node->info << endl;
 		node->right = new Node;
 		node->right->info = key;
-		node->right->leafNow = 0;
-		node->right->leafPossible = 2;
+		node->right->height = 0;
+		node->right->leafCounter = 1;
 		node->right->left = NULL;
 		node->right->right = NULL;
-		
-		node->leafNow += 1;
 	} else if(!isFull(node->left)){
 		insert(key, node->left);
-		node->leafNow+=1;
+		update(node->left);
 	} else if(!isFull(node->right)){
 		insert(key, node->right);
-		node->leafNow +=1;
+		update(node->right);
 	} else {
-	node->leafPossible *=2;	
-	node->leafNow = 1;
-	insert(key, node->left);
+		insert(key, node->left);
+		update(node->left);
 	}
 }
 
 bool Btree::isFull(Node *node){
-	return (node->leafNow = node->leafPossible);
+	if(node->left == NULL) return 0;
+	return (node->leafCounter == (int) pow(2, node->height));
 }
 
 void Btree::inorderPrint(){
